@@ -1,0 +1,12 @@
+type: scjd
+manifest_path: null
+stats_path: null
+num_frames: 33
+video_stride: 4
+height: 384
+width: 320
+color_jitter:
+  brightness: 0.2
+  contrast: 0.2
+  saturation: 0.2
+  hue: 0.0

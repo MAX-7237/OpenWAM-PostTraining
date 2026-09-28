@@ -1,0 +1,20 @@
+type: pku_figure10_mixture
+weight_strategy: proportional
+ego_index_path: /mnt/world_foundational/datasets/model-scaling/manifests/pku/scaling_subsets_20260926/ego_350h_20260926/index.json
+robot_index_path: /mnt/world_foundational/datasets/model-scaling/manifests/pku/scaling_subsets_20260926/robot_250h_20260926/index.json
+num_frames: 33
+video_stride: 4
+window_stride: 1
+height: 384
+width: 320
+multiview: true
+action_mode: eef
+normalize_mode: quantile
+normalization_stats_path: /mnt/world_foundational/datasets/model-scaling/manifests/pku/scaling_subsets_20260926/robot_250h_20260926/pku_eef_normalization_stats.npy
+unify_action: true
+enable_proprio_supervision: false
+color_jitter:
+  brightness: 0.2
+  contrast: 0.2
+  saturation: 0.2
+  hue: 0.0

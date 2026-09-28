@@ -1,0 +1,17 @@
+type: egodex
+dataset_dir: /media/damoxing/datasets/pku-data/data_proc_ego/retarget_lerobot/EgoDex
+invalid_episodes_path: /media/damoxing/datasets/model-scaling/manifests/scjd/egodex_invalid_episodes.json
+num_frames: 33
+video_stride: 4
+window_stride: 1
+height: 384
+width: 320
+multiview: false
+normalize_mode: null
+unify_action: true
+unify_action_map: ["0-9", "34-43"]
+color_jitter:
+  brightness: 0.2
+  contrast: 0.2
+  saturation: 0.2
+  hue: 0.0

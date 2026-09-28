@@ -1,0 +1,11 @@
+defaults:
+  - figure10_pku_base
+  - dataloader: pretrain_data/pku_figure10_ego350
+  - _self_
+
+training:
+  output_path: ${oc.env:OPENWAM_FIG10_OUTPUT_ROOT,outputs/figure10_pku}/ego2robot_ego_stage
+
+project:
+  wandb:
+    run_name: figure10-pku-ego2robot-ego-350h

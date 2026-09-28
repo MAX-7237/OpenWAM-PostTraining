@@ -1,0 +1,43 @@
+type: robotwin
+dataset_dir: ${oc.env:ROBOTWIN_DATASET_ROOT,/media/datasets/RoboTwin2_0/dataset}
+embodiment: aloha-agilex
+variant: clean_50
+
+# Fixed comparison subset: 10 tasks x 50 clean demonstrations.
+tasks:
+  - adjust_bottle
+  - handover_block
+  - lift_pot
+  - move_can_pot
+  - open_laptop
+  - place_can_basket
+  - place_empty_cup
+  - press_stapler
+  - shake_bottle
+  - stack_blocks_two
+
+action_mode: eef
+unify_action: true
+unify_action_map: ["0-9", "34-43"]
+unify_state_map: null
+
+num_frames: 33
+video_stride: 4
+window_stride: 1
+split: train
+
+height: 384
+width: 320
+multiview: true
+camera_layout: [head_camera, left_camera, right_camera]
+target_camera: head_camera
+
+normalize_mode: min-max
+normalization_stats_path: ${oc.env:ROBOTWIN10_STATS_PATH,/mnt/world_foundational/datasets/model-scaling/manifests/robotwin/clean50_10task_20260922/robotwin_clean50_10task_normalization_stats.npy}
+
+color_jitter:
+  enabled: true
+  brightness: 0.2
+  contrast: 0.2
+  saturation: 0.2
+  hue: 0.0

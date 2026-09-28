@@ -1,0 +1,12 @@
+# Raw absolute joint targets: left arm6 + gripper1 + right arm6 + gripper1.
+# Requires model action_dim=14 and state_dim=14; EEF foundation interfaces
+# require explicit adaptation before this config can be used for finetuning.
+defaults:
+  - robodojo
+  - _self_
+
+action_mode: joint
+unify_action: false
+unify_action_map: null
+unify_state_map: null
+normalize_mode: null

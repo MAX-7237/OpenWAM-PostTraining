@@ -1,0 +1,12 @@
+defaults:
+  - figure10_pku_base
+  - dataloader: pretrain_data/pku_figure10_robot250
+  - _self_
+
+training:
+  output_path: ${oc.env:OPENWAM_FIG10_OUTPUT_ROOT,outputs/figure10_pku}/ego2robot_robot_stage
+  finetune_ckpt_path: ${oc.env:OPENWAM_EGO_STAGE_CKPT}
+
+project:
+  wandb:
+    run_name: figure10-pku-ego2robot-robot-250h
