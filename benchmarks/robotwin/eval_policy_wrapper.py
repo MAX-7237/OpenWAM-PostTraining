@@ -104,8 +104,52 @@ def _prepare_runtime_root(robotwin_path: str) -> str:
         os.symlink(src, dst)
 
     os.makedirs(os.path.join(runtime_root, "eval_result"), exist_ok=True)
+    _repair_embodiment_asset_paths(runtime_root, robotwin_path)
     print(f"[eval_policy_wrapper] runtime_root={runtime_root}")
     return runtime_root
+
+
+def _repair_embodiment_asset_paths(runtime_root: str, robotwin_path: str) -> None:
+    """Relocate RoboTwin's generated cuRobo configs into the mounted checkout.
+
+    RoboTwin's ``update_embodiment_config_path.py`` materializes absolute asset
+    paths in ``curobo_left.yml``/``curobo_right.yml``.  A platform mount often
+    changes the checkout prefix, so those files can still point at the source
+    machine and make planner construction fail before the first rollout.  The
+    eval runtime is already a per-client writable tree; copy only these small
+    generated configs and rewrite their assets prefix there.
+    """
+    source_dir = os.path.join(robotwin_path, "assets", "embodiments")
+    target_dir = os.path.join(runtime_root, "assets", "embodiments")
+    if not os.path.isdir(source_dir) or not os.path.isdir(target_dir):
+        return
+    old_prefixes = (
+        "/media/damoxing/fileset/RoboTwin-Official/assets",
+        "/media/damoxing/fileset/RoboTwin/assets",
+    )
+    new_prefix = os.path.join(runtime_root, "assets")
+    for root, _dirs, files in os.walk(source_dir):
+        for filename in files:
+            if filename not in {"curobo.yml", "curobo_left.yml", "curobo_right.yml"}:
+                continue
+            src = os.path.join(root, filename)
+            rel = os.path.relpath(src, source_dir)
+            dst = os.path.join(target_dir, rel)
+            try:
+                text = open(src, encoding="utf-8").read()
+            except OSError:
+                continue
+            repaired = text
+            for old_prefix in old_prefixes:
+                repaired = repaired.replace(old_prefix, new_prefix)
+            # Also repair any absolute checkout prefix that is not one of the
+            # known workstation paths, while leaving unrelated YAML intact.
+            repaired = repaired.replace(os.path.join(robotwin_path, "assets"), new_prefix)
+            if repaired != text:
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                with open(dst, "w", encoding="utf-8") as handle:
+                    handle.write(repaired)
+                print(f"[eval_policy_wrapper] relocated cuRobo config: {rel}")
 
 
 def _prewarm_cuda_for_curobo() -> None:

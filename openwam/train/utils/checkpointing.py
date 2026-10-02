@@ -191,6 +191,25 @@ def verify_resume_normalization_stats(output_dir: str, dataset) -> None:
 
 # --- Checkpoint I/O (read/write training state) ---
 
+_WEIGHT_STEP_RE = re.compile(r"checkpoint_(?:.+_)?step_(\d+)\.safetensors$")
+
+
+def _weight_checkpoint_files(output_dir: str) -> list[str]:
+    """Return all weight checkpoints using the default or tagged naming scheme."""
+    files = _glob.glob(os.path.join(output_dir, "checkpoint*.safetensors"))
+    return [p for p in files if _WEIGHT_STEP_RE.search(os.path.basename(p))]
+
+
+def _weight_checkpoint_prefix() -> str:
+    """Return the configured weight filename prefix.
+
+    The empty/default tag preserves the historical checkpoint_step_N names.
+    Continuation jobs can set OPENWAM_CHECKPOINT_TAG=cont90k to produce
+    checkpoint_cont90k_step_N names, making their artifacts unambiguous.
+    """
+    tag = os.environ.get("OPENWAM_CHECKPOINT_TAG", "").strip()
+    return f"checkpoint_{tag}_step_" if tag else "checkpoint_step_"
+
 
 def save_weights(accelerator, architecture, output_path: str, global_step: int, *, final: bool) -> None:
     """Write the weights safetensors (the deploy artifact).
@@ -206,7 +225,7 @@ def save_weights(accelerator, architecture, output_path: str, global_step: int, 
 
     if not accelerator.is_main_process:
         return
-    ckpt_path = os.path.join(output_path, f"checkpoint_step_{global_step}.safetensors")
+    ckpt_path = os.path.join(output_path, f"{_weight_checkpoint_prefix()}{global_step}.safetensors")
     msg = f"[checkpoint] Saving {'final ' if final else ''}step {global_step} -> {ckpt_path}"
     logger.info(msg)
     tqdm.write(msg)
@@ -260,7 +279,10 @@ def load_full_state(accelerator, state_dir: str) -> dict:
 
 
 def step_num(path: str, prefix: str = "checkpoint_step_") -> int:
-    m = re.search(rf"{prefix}(\d+)", path)
+    if prefix == "checkpoint_step_":
+        m = _WEIGHT_STEP_RE.search(os.path.basename(path))
+    else:
+        m = re.search(rf"{re.escape(prefix)}(\d+)", path)
     return int(m.group(1)) if m else 0
 
 
@@ -270,13 +292,12 @@ def find_latest_weights(run_dir: str) -> str:
     Used by the finetune path. Malformed names are skipped; step-0-only triggers
     a warning (likely a crash before the first real save).
     """
-    files = _glob.glob(os.path.join(run_dir, "checkpoint_step_*.safetensors"))
+    files = _weight_checkpoint_files(run_dir)
     if not files:
-        raise FileNotFoundError(f"No checkpoint_step_*.safetensors found in {run_dir}")
-    step_re = re.compile(r"checkpoint_step_(\d+)\.safetensors$")
+        raise FileNotFoundError(f"No weight checkpoint found in {run_dir}")
     numbered: list[tuple[int, str]] = []
     for f in files:
-        m = step_re.search(os.path.basename(f))
+        m = _WEIGHT_STEP_RE.search(os.path.basename(f))
         if m is not None:
             numbered.append((int(m.group(1)), f))
         else:
@@ -346,7 +367,7 @@ def manage_checkpoints(output_dir: str, keep_last_k: int):
     """
     import shutil
 
-    files = _glob.glob(os.path.join(output_dir, "checkpoint_step_*"))
+    files = _weight_checkpoint_files(output_dir)
     files.sort(key=lambda p: step_num(p, "checkpoint_step_"))
     while len(files) > keep_last_k:
         old = files.pop(0)
@@ -381,7 +402,7 @@ def finalize_keep_weights_only(output_dir: str, keep_last_k: int = 1):
             except OSError as e:
                 logger.warning("Failed to remove accelerate state dir %s: %s", d, e)
 
-    files = _glob.glob(os.path.join(output_dir, "checkpoint_step_*.safetensors"))
+    files = _weight_checkpoint_files(output_dir)
     files.sort(key=lambda p: step_num(p, "checkpoint_step_"))
     num_to_remove = max(0, len(files) - keep_last_k)
     for old in files[:num_to_remove]:

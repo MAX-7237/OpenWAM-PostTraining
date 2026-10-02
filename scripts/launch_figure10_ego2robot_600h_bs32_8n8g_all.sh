@@ -30,6 +30,8 @@ env \
   WANDB_CONFIG_DIR="${LOG_ROOT}/wandb-config/${EGO_RUN_ID}" \
   WANDB_DATA_DIR="${LOG_ROOT}/wandb-data/${EGO_RUN_ID}" \
   XDG_CACHE_HOME="${LOG_ROOT}/xdg-cache/${EGO_RUN_ID}" \
+  OPENWAM_WARM_START_CKPT="${OPENWAM_WARM_START_CKPT:-}" \
+  OPENWAM_MAX_STEPS="${OPENWAM_MAX_STEPS:-}" \
   bash scripts/launch_figure10_ego2robot_600h_bs32_8n8g.sh ego
 
 if [[ "${OPENWAM_DRY_RUN:-0}" == 1 ]]; then
@@ -71,6 +73,8 @@ env \
   WANDB_CONFIG_DIR="${LOG_ROOT}/wandb-config/${ROBOT_RUN_ID}" \
   WANDB_DATA_DIR="${LOG_ROOT}/wandb-data/${ROBOT_RUN_ID}" \
   XDG_CACHE_HOME="${LOG_ROOT}/xdg-cache/${ROBOT_RUN_ID}" \
+  OPENWAM_WARM_START_CKPT="" \
+  OPENWAM_MAX_STEPS="" \
   bash scripts/launch_figure10_ego2robot_600h_bs32_8n8g.sh robot
 
 echo "EGO2ROBOT_COMPLETE=$PIPELINE_RUN_ID"

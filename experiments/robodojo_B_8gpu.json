@@ -1,0 +1,34 @@
+{
+  "group": "B",
+  "model": "OpenWAM",
+  "experiments": {
+    "T1": {
+      "tasks": ["cover_blocks", "play_tic_tac_toe"],
+      "episodes_per_task": 100,
+      "total_episodes": 200
+    },
+    "T2": {
+      "tasks": ["cover_blocks", "play_tic_tac_toe", "match_and_pick_from_conveyor", "classify_objects"],
+      "episodes_per_task": 100,
+      "total_episodes": 400
+    },
+    "T3": {
+      "tasks": ["cover_blocks", "play_tic_tac_toe", "match_and_pick_from_conveyor", "classify_objects", "fold_clothes", "pour_balls_into_vase"],
+      "episodes_per_task": 100,
+      "total_episodes": 600
+    },
+    "T4": {
+      "tasks": ["cover_blocks", "play_tic_tac_toe", "match_and_pick_from_conveyor", "classify_objects", "fold_clothes", "pour_balls_into_vase", "stack_bowls", "organize_table"],
+      "episodes_per_task": 100,
+      "total_episodes": 800
+    }
+  },
+  "global_batch_size": 96,
+  "world_size": 8,
+  "per_gpu_batch_size": 4,
+  "gradient_accumulation_steps": 3,
+  "total_steps": 30000,
+  "save_steps": 1000,
+  "seed": 42,
+  "init": "/media/damoxing/datasets/model-scaling/weights/openwam/alpha-foundation"
+}

@@ -22,12 +22,22 @@ case "$VARIANT" in
     INIT=/mnt/world_foundational/datasets/model-scaling/weights/openwam/study-pretrain/pretrain_ego_robot_cotrain_mutual
     MASK=mutual
     ;;
+  pku-ego-robot-600h)
+    : "${OPENWAM_SFT_INIT:?set OPENWAM_SFT_INIT to a self-contained pretraining checkpoint directory}"
+    INIT="$OPENWAM_SFT_INIT"
+    MASK="${OPENWAM_SFT_MASK:-mutual}"
+    ;;
+  pku-ego2robot-600h)
+    : "${OPENWAM_SFT_INIT:?set OPENWAM_SFT_INIT to a self-contained pretraining checkpoint directory}"
+    INIT="$OPENWAM_SFT_INIT"
+    MASK="${OPENWAM_SFT_MASK:-action_sees_video}"
+    ;;
   pku-ego-robot-step6000)
     INIT=/media/damoxing/ckp/openwam/sft_inits/pku_ego_robot_step6000
     MASK=action_sees_video
     ;;
   *)
-    echo "usage: $0 {from-scratch|official-robot-only|official-ego2robot|official-ego-robot-mutual|pku-ego-robot-step6000}" >&2
+    echo "usage: $0 {from-scratch|official-robot-only|official-ego2robot|official-ego-robot-mutual|pku-ego-robot-600h|pku-ego2robot-600h|pku-ego-robot-step6000}" >&2
     exit 2
     ;;
 esac

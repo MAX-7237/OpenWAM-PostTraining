@@ -1,0 +1,92 @@
+# RoboDojo B-group: fixed 100 episodes/task, varying task count.
+# 8 A800 GPUs, per-GPU batch 4, gradient accumulation 3 => global batch 96.
+defaults:
+  - model: dual_system
+  - dataloader: robodojo_joint
+  - _self_
+
+model:
+  video_backbone:
+    encoder:
+      model_path: /media/damoxing/datasets/model-scaling/weights/shared/Wan2.2-TI2V-5B
+    model_path: /media/damoxing/datasets/model-scaling/weights/shared/Wan2.2-TI2V-5B
+  architecture:
+    framework: dual_system
+    variant: joint_self_attn
+    action_dim: 14
+    state_dim: 14
+    use_proprioception: true
+    attention_mask_mode: mutual
+    video_attention_mask_mode: first_frame_causal
+    bridge_layers: null
+    bridge_interval: 1
+    mot_checkpoint_mixed_attn: true
+    detach_bridge: false
+    idm_video_cond_noise_prob: 0.5
+
+dataloader:
+  embodiment: arx_x5
+  variant: sim
+  action_mode: joint
+  unify_action: false
+  unify_action_map: null
+  unify_state_map: null
+  num_frames: 33
+  video_stride: 4
+  window_stride: 1
+  split: train
+  height: 384
+  width: 320
+  multiview: true
+  camera_layout: [cam_head, cam_left_wrist, cam_right_wrist]
+  target_camera: cam_head
+  normalize_mode: null
+  color_jitter:
+    enabled: true
+    brightness: 0.2
+    contrast: 0.2
+    saturation: 0.2
+    hue: 0.0
+
+training:
+  debug: false
+  learning_rate: 1e-4
+  adam_betas: [0.9, 0.95]
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  num_epochs: null
+  max_steps: 30000
+  batch_size: 4
+  gradient_accumulation_steps: 3
+  log_every: 20
+  lr_scheduler: cosine
+  warmup_ratio: 0.05
+  lr_min_ratio: 0.01
+  action_lr: null
+  video_lr: null
+  mixed_precision: bf16
+  zero_stage: 2
+  use_gradient_checkpointing: true
+  use_gradient_checkpointing_offload: false
+  initialize_model_on_cpu: false
+  offload_optimizer_device: none
+  lambda_video: 1.0
+  lambda_action: 1.0
+  max_timestep_boundary: 1.0
+  min_timestep_boundary: 0.0
+  save_steps: 1000
+  output_path: /media/damoxing/datasets/model-scaling/runs/robodojo10_joint14_B_8gpu
+  save_full_states_for_resume: true
+  keep_last_k_ckpts: 31
+  finetune_ckpt_path: /media/damoxing/datasets/model-scaling/weights/openwam/alpha-foundation
+  resume_ckpt_path: null
+  dataset_num_workers: 8
+  reinitialize_joint_interfaces: true
+
+project:
+  name: openwam
+  seed: 42
+  wandb:
+    project: openwam
+    run_name: null
+    entity: wth009x-1

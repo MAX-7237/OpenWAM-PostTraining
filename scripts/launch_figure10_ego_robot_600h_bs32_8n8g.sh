@@ -37,6 +37,27 @@ export RUN_ID="${RUN_ID:-ego-robot-600h-abs-eef-q99-8n8g-bs32-1epoch-log20-20260
 export CKPT_ROOT="${CKPT_ROOT:-/media/damoxing/ckp/openwam/figure10_ego_robot_600h_8n8g_bs32_1epoch}"
 export OUTPUT_BASE="${CKPT_ROOT}/${RUN_ID}"
 export OPENWAM_PER_GPU_BATCH="${OPENWAM_PER_GPU_BATCH:-32}"
+export OPENWAM_WARM_START_CKPT="${OPENWAM_WARM_START_CKPT:-}"
+export OPENWAM_MAX_STEPS="${OPENWAM_MAX_STEPS:-}"
+
+if [[ -n "$OPENWAM_WARM_START_CKPT" ]]; then
+  [[ -d "$OPENWAM_WARM_START_CKPT" ]] || {
+    echo "Missing warm-start checkpoint directory: $OPENWAM_WARM_START_CKPT" >&2
+    exit 3
+  }
+  [[ -f "$OPENWAM_WARM_START_CKPT/config.yaml" ]] || {
+    echo "Warm-start checkpoint is missing config.yaml: $OPENWAM_WARM_START_CKPT" >&2
+    exit 3
+  }
+  if ! compgen -G "$OPENWAM_WARM_START_CKPT/checkpoint_step_*.safetensors" >/dev/null; then
+    echo "Warm-start checkpoint has no checkpoint_step_*.safetensors: $OPENWAM_WARM_START_CKPT" >&2
+    exit 3
+  fi
+fi
+if [[ -n "$OPENWAM_MAX_STEPS" && ! "$OPENWAM_MAX_STEPS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "OPENWAM_MAX_STEPS must be a positive integer" >&2
+  exit 2
+fi
 
 if [[ "$OPENWAM_PER_GPU_BATCH" != 32 ]]; then
   echo "This launcher is fixed to per-GPU batch 32; got OPENWAM_PER_GPU_BATCH=$OPENWAM_PER_GPU_BATCH" >&2
@@ -159,10 +180,12 @@ echo "LOG_EVERY=20"
 echo "PYTHON=$OPENWAM_PYTHON"
 echo "CUDNN=$OPENWAM_CUDNN_LIB"
 echo "WAN22=$OPENWAM_WAN22_PATH"
+[[ -z "$OPENWAM_WARM_START_CKPT" ]] || echo "WARM_START_CKPT=$OPENWAM_WARM_START_CKPT"
+[[ -z "$OPENWAM_MAX_STEPS" ]] || echo "MAX_STEPS=$OPENWAM_MAX_STEPS"
 "$OPENWAM_PYTHON" -c 'import torch; print(f"TORCH={torch.__version__} CUDA={torch.version.cuda} GPUS={torch.cuda.device_count()}")'
 
 set -o pipefail
-bash scripts/train_figure10_ego_robot_8n8g.sh \
+TRAIN_OVERRIDES=(
   training.num_epochs=1 \
   training.max_steps=null \
   training.batch_size=32 \
@@ -173,5 +196,14 @@ bash scripts/train_figure10_ego_robot_8n8g.sh \
   training.save_steps=2000 \
   training.keep_last_k_ckpts=1 \
   training.output_path="$OUTPUT_BASE" \
-  project.wandb.run_name="$RUN_ID" \
+  project.wandb.run_name="$RUN_ID"
+)
+if [[ -n "$OPENWAM_WARM_START_CKPT" ]]; then
+  TRAIN_OVERRIDES+=(training.finetune_ckpt_path="$OPENWAM_WARM_START_CKPT")
+fi
+if [[ -n "$OPENWAM_MAX_STEPS" ]]; then
+  TRAIN_OVERRIDES+=(training.num_epochs=null training.max_steps="$OPENWAM_MAX_STEPS")
+fi
+
+bash scripts/train_figure10_ego_robot_8n8g.sh "${TRAIN_OVERRIDES[@]}" \
   2>&1 | tee -a "$OPENWAM_PLATFORM_LOG_DIR/node_${NODE_RANK}.log"
